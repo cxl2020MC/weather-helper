@@ -50,7 +50,7 @@ def getToday(cityName):
             url1 = 'https://v1.hitokoto.cn/?c=f&encode=text'
             apiget = requests.get(url1)
             apidata = apiget.text
-            content='一言:'+str(apidata)
+            content='一言：'+str(apidata)
             print(content)
         data={'msg':date+"\n"+city+"当前温度为："+wendu+"\n"+"当前天气:"+type+"\n"+fx+"\n"+"最"+high+"\n"+"最"+low+"\n"+ganmao+"\n"+content,
               'qq':qq}
