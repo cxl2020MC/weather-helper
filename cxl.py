@@ -3,7 +3,7 @@ import requests,time
 with open('配置文件.txt','r',encoding="utf-8") as f:
    pzwj=f.read()  #文件的读操作
 #pzwj=pzwj.replace('\n', '').replace('\r', '')
-#pzwj=pzwj.replace(' ', '')
+pzwj=pzwj.replace(' ', '')
 qq=pzwj.split('\n')[2]
 #print(qq)
 city1=pzwj.split('\n')[1]
@@ -77,6 +77,17 @@ def postdata():
     data={'msg':date+"\n"+city+"当前温度为："+wendu+"\n"+"当前天气:"+type+"\n"+fx+"\n"+"最"+high+"\n"+"最"+low+"\n"+ganmao+"\n"+content,
            'qq':qq}
     print('发送预览：'+'\n'+data['msg'])
+
+def gongao():
+    gongaokg=pzwj.split('\n')[4]
+    if gongaokg == "y":
+        url2 = 'https://cxl2020mc.github.io/tp/公告.txt'
+        gongaoresponse = requests.get(url2)
+        gongao = gongaoresponse.text
+        print("公告："+"\n"+gongao) 
+    else:
+        print('您未开启公告')  
+gongao()
 postdata()
 url='https://qmsg.zendee.cn/send/'+apikey
 print(url)
