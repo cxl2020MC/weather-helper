@@ -1,4 +1,5 @@
-import requests,time
+import requests,time,os
+import zipfile36 as zipfile
 
 with open('配置文件.txt','r',encoding="utf-8") as f:
    pzwj=f.read()  #文件的读操作
@@ -80,17 +81,53 @@ def postdata():
 
 def gongao():
     gongaokg=pzwj.split('\n')[4]
-    if gongaokg == "y":
-        url2 = 'https://cxl2020mc.github.io/tp/公告.txt'
-        gongaoresponse = requests.get(url2)
+    if gongaokg == ("y" or "Y" or "yes"):
+        url = 'https://cxl2020mc.github.io/tp/公告.txt'
+        gongaoresponse = requests.get(url)
         gongao = gongaoresponse.text
-        print("公告："+"\n"+gongao) 
+        print("公告："+"\n"+gongao+"\n") 
     else:
         print('您未开启公告')  
+
+def update():
+    if pzwj.split('\n')[5] == ("y" or "Y" or "yes"):
+        url = 'https://cxl2020mc.github.io/tp/update.txt'
+        updateresponse = requests.get(url)
+        update = updateresponse.text
+        updateText = update.replace('v', '').replace('V', '')
+        #当前版本
+        version = "v4.0"
+        #去除v和V
+        version = version.replace('v', '').replace('V', '')
+        if version < update:
+            print("当前版本"+"v"+version+"，"+"最新版本"+"v"+updateText+"，需要更新")
+            #os.system("update.exe")
+            print("下载更新中......")
+            url = 'https://github.com/cxl2020MC/weather-helper-update/archive/master.zip' 
+            r = requests.get(url)
+            with open("update.zip", "wb") as code:
+                code.write(r.content)
+            print("下载成功，正在解压......")
+            zip_file = zipfile.ZipFile(r'.\update.zip')
+            # 解压
+            zip_extract = zip_file.extractall(".\\update")
+            #zip_extract.close()
+            #zip_file.getinfo(".\update\")
+            zip_file.close()
+            print("解压成功")
+            print("由于打包EXE的技术问题，暂时不能自动更新，请打开天气助手所在目录下的update文件夹中的weather-helper-update-master文件夹手动复制文件到天气助手所在目录")
+            #删除不必要文件
+            os.remove(".\update\weather-helper-update-master\git.sh")
+            os.remove("update.zip")
+            os.remove(".\update\weather-helper-update-master\配置文件.txt")
+            exit()
+    else:
+        print('您未开启更新') 
+         
 gongao()
 postdata()
 url='https://qmsg.zendee.cn/send/'+apikey
 print(url)
 r=requests.post(url,data=data)
 print(r.text)
-
+update()
