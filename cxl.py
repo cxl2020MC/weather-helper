@@ -27,6 +27,7 @@ def getData(cityName):
         types.append(info['type'])
         highs.append(info['high'])
         lows.append(info['low'])
+
 def getToday(cityName):
     url = 'http://wthrcdn.etouch.cn/weather_mini?city=' + cityName
     response = requests.get(url)
@@ -85,8 +86,11 @@ def gongao():
     if gongaokg == ("y" or "Y" or "yes"):
         url = 'https://cxl2020mc.github.io/tp/公告.txt'
         gongaoresponse = requests.get(url)
-        gongao = gongaoresponse.text
-        print("公告："+"\n"+gongao+"\n") 
+        if gongaoresponse.status_code == requests.codes.ok:
+            gongao = gongaoresponse.text
+            print("公告："+"\n"+gongao+"\n") 
+        else:
+            print("暂未设置公告")
     else:
         print('您未开启公告')  
 
@@ -95,21 +99,21 @@ def update():
         global version,update
         url = 'https://cxl2020mc.github.io/tp/update.txt'
         updateresponse = requests.get(url)
-        update = updateresponse.text
-        
-        #updateText = update.replace('v', '').replace('V', '')
-        #当前版本
-        version = "v5.0"
-        update = update.replace(' ', '').replace('\n', '')
-        #去除v和V
-        #version = version.replace('v', '').replace('V', '')
-        #version1 = int(version.replace('.0', ''))
-        #updateText1 = int(updateText.replace('.0', ''))
-        if version != update:
-            installation()
-            exit()
+        if updateresponse.status_code == requests.codes.ok:
+            
+            update = updateresponse.text
+            #当前版本
+            version = "v6.0"
+            update = update.replace(' ', '').replace('\n', '')
+            #比对版本号
+            if version != update:
+                installation()
+                #退出程序
+                exit()
+            else:
+                print("您使用的是最新版本")
         else:
-            print("您使用的是最新版本")
+            print("自动更新出现问题，请及时成功查看是否有更新，响应代码为："+updateresponse.status_code)
     else:
         print('您未开启更新')
 
@@ -167,50 +171,59 @@ def copy_file(path_read, path_write):
 ##############################################################################################################################
 def installation():
     print("当前版本"+version+"，"+"最新版本"+update+"，需要更新")
-    #os.system("update.exe")
-    #if int(len(update.split('\n'))) > 1:
-    #    for i in update.split('\n'):
-    #        print(i)
-    #下载更新
-    print("下载更新中......")
-    start = time.time()
-    url = 'https://github.com/cxl2020MC/weather-helper-update/archive/master.zip' 
-    r = requests.get(url)
-    with open("update.zip","wb")as code:
-        code.write(r.content)
-    end = time.time()
-    print("下载总耗时:"+str(end-start)+"秒")
-
-    print("下载成功，正在解压......")
-    zip_file = zipfile.ZipFile(r'.\update.zip')
-    # 解压
-    zip_extract = zip_file.extractall(r".\update")
-    #zip_extract.close()
-    #zip_file.getinfo(".\update\")
-    zip_file.close()
-    print("解压成功")
-    print("由于打包EXE的技术问题，暂时不能自动更新，请打开天气助手所在目录下的update文件夹中的weather-helper-update-master文件夹手动复制文件到天气助手所在目录")
-    #删除不必要文件
-    os.remove(r".\update\weather-helper-update-master\git.sh")
-    os.remove("update.zip")
-    os.remove(r".\update\weather-helper-update-master\配置文件.txt")
-    #测试自动更新代码    
-    number = 0
-    # 从该文件夹中复制出来
-    path_read = '.\\update\\weather-helper-update-master'
-    # 复制到该文件夹
-    path_write = "."
-    # 执行递归函数
-    #copy_file(path_read, path_write)
-    # 输出一共有多少个文件
-    #print(number)
+    #打印手动更新链接
+    print("gitee手动更新链接：https://gitee.com/cxl2020/weather-helper/repository/archive/master.zip")
+    a=input("是否更新（是y，否n）:")
+    if a == y or a == Y:
+        #下载更新
+        print("下载更新中......")
+        start = time.time()
+        url = 'https://github.com/cxl2020MC/weather-helper-update/archive/master.zip' 
+        r = requests.get(url)
+        with open("update.zip","wb")as code:
+            code.write(r.content)
+        end = time.time()
+        print("下载总耗时:"+str(end-start)+"秒")
+        #打印下载完成信息
+        print("下载成功，正在解压......")
+        zip_file = zipfile.ZipFile(r'.\update.zip')
+        # 解压
+        zip_extract = zip_file.extractall(r".\update")
+        #zip_extract.close()
+        #zip_file.getinfo(".\update\")
+        zip_file.close()
+        print("解压成功")
+        print("由于打包EXE的技术问题，暂时不能自动更新，请打开天气助手所在目录下的update文件夹中的weather-helper-update-master文件夹手动复制文件到天气助手所在目录")
+        #删除不必要文件
+        os.remove(r".\update\weather-helper-update-master\git.sh")
+        os.remove("update.zip")
+        os.remove(r".\update\weather-helper-update-master\配置文件.txt")
+        
+        #测试自动更新代码    
+        number = 0
+        # 从该文件夹中复制出来
+        path_read = '.\\update\\weather-helper-update-master'
+        # 复制到该文件夹
+        path_write = "."
+        # 执行递归函数
+        #copy_file(path_read, path_write)
+        # 输出一共有多少个文件
+        #print(number)
+    else:
+        print('手动更新gitee地址：https://gitee.com/cxl2020/weather-helper/repository/archive/master.zip'+'/n'+"手动更新github下载地址https://github.com/cxl2020MC/weather-helper-update/archive/master.zip")
     
 
 
 gongao()
 postdata()
 url='https://qmsg.zendee.cn/send/'+apikey
-print(url)
+print("请核对请求链接："+url)
 r=requests.post(url,data=data)
-print(r.text)
+#print(r.text)
+QmsgData=r.json()
+print(QmsgData)
+if QmsgData["success"] == True:
+    print(QmsgData["reason"])
+else:
+    print("操作失败，原因："+QmsgData["reason"])
 update()
