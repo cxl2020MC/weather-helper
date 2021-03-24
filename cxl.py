@@ -1,7 +1,7 @@
 import requests,time,os,sys
-import zipfile36 as zipfile
-from shutil import copyfile
-
+#import zipfile36 as zipfile
+#from shutil import copyfile
+print('weather-helper（天气助手）\nby 陈鑫磊')
 with open('配置文件.txt','r',encoding="utf-8") as f:
    pzwj=f.read()  #文件的读操作
 #pzwj=pzwj.replace('\n', '').replace('\r', '')
@@ -27,6 +27,26 @@ def getData(cityName):
         types.append(info['type'])
         highs.append(info['high'])
         lows.append(info['low'])
+
+def if_getToday(city1):
+    if pzwj.split('\n')[1] == 'xx区' or pzwj.split('\n')[1] == '':
+        #获取ip
+        url = 'https://api.live.bilibili.com/client/v1/Ip/getInfoNew'
+        response = requests.get(url)
+        ipDict = response.json()
+        print(ipDict)
+        if ipDict['code'] == 0:
+            ip=ipDict['data']['addr']
+            print('你的ip为:'+ip)
+            #拼接地址
+            add = ipDict['data']['country']+ipDict['data']['province']+ipDict['data']['city']+ipDict['data']['isp']
+            print('欢迎'+add+'用户')
+            city1 = ipDict['data']['city']
+        
+    if pzwj.split('\n')[6] == '1' or pzwj.split('\n')[6] == 1:
+        getToday(city1)
+    else:
+        getToday2(city1)
 
 def getToday(cityName):
     url = 'http://wthrcdn.etouch.cn/weather_mini?city=' + cityName
@@ -60,9 +80,68 @@ def getToday(cityName):
         fx=weatherDict['data']['yesterday']['fx']+fl.replace('<![CDATA[', '').replace(']]>', '')
     else:
         print('你输入的城市是错误的')
+        
+#定义高德地图天气api
+def getToday2(cityName):
+    global data,watherdata
+    #获取ip
+    url = 'https://api.live.bilibili.com/client/v1/Ip/getInfoNew'
+    response = requests.get(url)
+    ipDict = response.json()
+    print(ipDict)
+    if ipDict['code'] == 0:
+        ip=ipDict['data']['addr']
+        print('你的ip为:'+ip)
+        #拼接地址
+        add = ipDict['data']['country']+ipDict['data']['province']+ipDict['data']['city']+ipDict['data']['isp']
+        print('欢迎'+add+'用户')
+        #返回高德地图城市编码
+        if cityName == '' or cityName == 'xx区':
+            url='https://restapi.amap.com/v3/ip?key=17f5a20a3538770bb35d639d0353787e&ip='+ip
+            response = requests.get(url)
+            cityDict = response.json()
+            print(cityDict)
+        else:
+            url='https://restapi.amap.com/v3/place/text?key=17f5a20a3538770bb35d639d0353787e&citylimit=true&city='+cityName
+            response = requests.get(url)
+            cityDict = response.json()
+            print(cityDict)
+        if cityDict['status'] == 0:
+            code=cityDict['adcode']
+            print('城市编码请求成功，编码为：'+code)
+            url = 'https://restapi.amap.com/v3/weather/weatherInfo?key=17f5a20a3538770bb35d639d0353787e&city='+code
+            response = requests.get(url)
+            weatherDict = response.json()
+            print(weatherDict)
+            if weatherDict['status'] == 1:
+                #实况天气数据信息
+                lives=watherDict['lives']
+                #当前时间
+                month = time.strftime('%m')
+                date = month + '月' + forecast[0]['date']
+                #城市名
+                city=ipDict['data']['city']
+                #天气
+                wather=lives['weather']
+                #实时气温
+                wendu=lives['temperature']
+                #风向
+                fx=lives['temperature']
+                #风力
+                windpower=lives['windpower']
+                #湿度
+                sd=lives['humidity']
+                #数据发布时间
+                end_time=lives['reporttime']
+                watherdata=date+ctiy+'天气\n现在'+wather+'\n'+'当前'+wendo+'\n'+fx+windpower+'\n湿度'+sd+'\n数据截止之'+end_time
+            else:
+                print('天气获取失败')
+        else:
+            print('ip获取失败')
 
 def postdata():
-    getToday(city1)
+    #getToday(city1)
+    if_getToday(city1)
     global data
     if int(xzqdapi) == 1:
         url1 = 'https://api.uixsj.cn/hitokoto/get?type=hitokoto&code=json'
@@ -76,15 +155,18 @@ def postdata():
         apidata = apiget.text
         content='一言：'+str(apidata)
         print(content)
-
-    data={'msg':date+"\n"+city+"当前温度为："+wendu+"\n"+"当前天气:"+type+"\n"+fx+"\n"+"最"+high+"\n"+"最"+low+"\n"+ganmao+"\n"+content,
-           'qq':qq}
+    if pzwj.split('\n')[6] == 1 or pzwj.split('\n')[6] == '1':
+        data={'msg':date+"\n"+city+"当前温度为："+wendu+"\n"+"当前天气:"+type+"\n"+fx+"\n"+"最"+high+"\n"+"最"+low+"\n"+ganmao+"\n"+content,
+              'qq':qq}
+    else:
+        data={'msg':watherdata,'qq':qq}
     print('发送预览：'+'\n'+data['msg'])
 
 def gongao():
     gongaokg=pzwj.split('\n')[4]
     if gongaokg == ("y" or "Y" or "yes"):
-        url = 'https://cxl2020mc.github.io/tp/公告.txt'
+        #url = 'https://cxl2020mc.github.io/tp/公告.txt'
+        url = 'https://cxl2020mc.vercel.app/tp/公告.txt'
         gongaoresponse = requests.get(url)
         if gongaoresponse.status_code == requests.codes.ok:
             gongao = gongaoresponse.text
@@ -97,13 +179,14 @@ def gongao():
 def update():
     if pzwj.split('\n')[5] == ("y" or "Y" or "yes"):
         global version,update
-        url = 'https://cxl2020mc.github.io/tp/update.txt'
+        #url = 'https://cxl2020mc.github.io/tp/update.txt'
+        url = 'https://cxl2020mc.vercel.app/tp/update.txt'
         updateresponse = requests.get(url)
         if updateresponse.status_code == requests.codes.ok:
             
             update = updateresponse.text
             #当前版本
-            version = "v6.0"
+            version = "v7.0"
             update = update.replace(' ', '').replace('\n', '')
             #比对版本号
             if version != update:
@@ -117,64 +200,13 @@ def update():
     else:
         print('您未开启更新')
 
-#以下来自网络
-#############################################################################################################################
-# 这个程序的作用：
-# 可以将A目录下的所有文件以及A目录下的文件夹中的文件复制到另外一个目录B里并且保留所有目录结构
-# 这个程序的作用等同于windows下直接将一个文件夹复制到另一个文件夹中（windows的复制也是保留目录结构的）
-# 但是不同点是：这个程序复制出的所有文件以及文件夹他们的修改日期、访问日期都是当前系统时间
-#               而windows系统的复制之后的文件的修改日期、访问日期都和复制前的时间一样
-# 目的：我需要修改一个工程内所有代码文件的创建日期，发现直接在windows下复制实现不了，于是用代码试了试，下面是我
-#       实现的python代码（如果文件不多的话，要实现该功能也可以用下面的方法：打开文件，然后随便编辑一个
-#       文字->保存->删除刚才编辑的文字->保存。这样做之后修改日期会改为当前时间，创建时间依然不变。）
-#import os
-#from shutil import copyfile  # 复制一个文件到另一个文件夹下    copyfile(src,dst)
-# 递归函数
-def copy_file(path_read, path_write):
-    # 将number设置为全局变量
-    global number
-    # 输出path_read目录下的所有文件包括文件夹的名称
-    names = os.listdir(path_read)
-    # 循环遍历所有的文件或文件夹
-    for name in names:
-        # 定义新的读入路径（就是在原来目录下拼接上文件名）
-        path_read_new = path_read + "\\" + name
-        # 定义新的写入路径（就是在原来目录下拼接上文件名）
-        path_write_new = path_write + "\\" + name
-        # 判断该读入路径是否是文件夹，如果是文件夹则执行递归，如果是文件则执行复制操作
-        if os.path.isdir(path_read_new):
-            # 判断写入路径中是否存在该文件夹，如果不存在就创建该文件夹
-            if not os.path.exists(path_write_new):
-                # 创建要写入的文件夹
-                os.mkdir(path_write_new)
-            # 执行递归函数，将文件夹中的文件复制到新创建的文件夹中（保留原始目录结构）
-            copy_file(path_read_new, path_write_new)
-        else:
-            # 每复制一次，number+1
-            number += 1
-            # 将文件path_read_new复制到path_write_new
-            copyfile(path_read_new, path_write_new)
 
-
-#if __name__ == "__main__":
-    # 定义一个变量，用来记录一共进行了多少次复制（也就是一共有多少个文件）
-#    number = 0
-    # 从该文件夹中复制出来
-#    path_read = '.\\update\\weather-helper-update-master'
-    # 复制到该文件夹
-#    path_write = "."
-    # 执行递归函数
-#    copy_file(path_read, path_write)
-    # 输出一共有多少个文件
-#    print(number)
-
-##############################################################################################################################
 def installation():
     print("当前版本"+version+"，"+"最新版本"+update+"，需要更新")
     #打印手动更新链接
     print("gitee手动更新链接：https://gitee.com/cxl2020/weather-helper/repository/archive/master.zip")
     a=input("是否更新（是y，否n）:")
-    if a == y or a == Y:
+    if a == 'y' or a == 'Y':
         #下载更新
         print("下载更新中......")
         start = time.time()
@@ -193,22 +225,14 @@ def installation():
         #zip_file.getinfo(".\update\")
         zip_file.close()
         print("解压成功")
-        print("由于打包EXE的技术问题，暂时不能自动更新，请打开天气助手所在目录下的update文件夹中的weather-helper-update-master文件夹手动复制文件到天气助手所在目录")
         #删除不必要文件
         os.remove(r".\update\weather-helper-update-master\git.sh")
         os.remove("update.zip")
         os.remove(r".\update\weather-helper-update-master\配置文件.txt")
-        
-        #测试自动更新代码    
-        number = 0
-        # 从该文件夹中复制出来
-        path_read = '.\\update\\weather-helper-update-master'
-        # 复制到该文件夹
-        path_write = "."
-        # 执行递归函数
-        #copy_file(path_read, path_write)
-        # 输出一共有多少个文件
-        #print(number)
+        #打开自动更新文件
+        os.system("start 自动更新.bat")
+        print("正在启动复制文件脚本，本程序将在5秒后关闭")
+        time.sleep(5)
     else:
         print('手动更新gitee地址：https://gitee.com/cxl2020/weather-helper/repository/archive/master.zip'+'/n'+"手动更新github下载地址https://github.com/cxl2020MC/weather-helper-update/archive/master.zip")
     
